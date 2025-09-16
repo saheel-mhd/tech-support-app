@@ -1,5 +1,4 @@
 // src/controllers/ticketController.js
-import mongoose from "mongoose";
 import Ticket from "../models/Ticket.js";
 
 // Get all tickets (Admin/Agent)
@@ -24,14 +23,6 @@ export const createTicket = async (req, res) => {
     return res.status(400).json({ message: "Title and user are required" });
   }
 
-  // Validate ObjectId
-  if (!mongoose.Types.ObjectId.isValid(user)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
-  if (assignedAgent && !mongoose.Types.ObjectId.isValid(assignedAgent)) {
-    return res.status(400).json({ message: "Invalid assigned agent ID" });
-  }
-
   try {
     const ticket = await Ticket.create({
       title,
@@ -50,10 +41,12 @@ export const createTicket = async (req, res) => {
 
     res.status(201).json(populatedTicket);
   } catch (error) {
-    console.error("Error creating ticket:", error);
+    console.error("Error creating ticket:", error.message);
     res.status(500).json({ message: "Failed to create ticket", error: error.message });
   }
 };
+
+
 
 // Update ticket status or assigned agent
 export const updateTicketStatus = async (req, res) => {
@@ -64,11 +57,13 @@ export const updateTicketStatus = async (req, res) => {
     const ticket = await Ticket.findById(id);
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
+    // Only update statusChangedBy if status changes
     if (status && status !== ticket.status) {
       ticket.status = status;
-      ticket.statusChangedBy = req.user?._id || null;
+      ticket.statusChangedBy = req.user? req.user._id : null; // user making the change
     }
 
+    // Update agent separately (does NOT affect statusChangedBy)
     if (assignedAgent) {
       ticket.assignedAgent = assignedAgent;
     }
