@@ -67,17 +67,17 @@ const SupportHistory = ({ token }) => {
     }
   };
 
-  // Apply filters and sort by latest first
+  // Apply filters and sort by updatedAt (latest updated first)
   const filteredTickets = tickets
     .filter((t) => {
       const matchUser = filterUser ? t.user?._id === filterUser : true;
-      const matchAgent = filterAgent ? t.agent?._id === filterAgent : true;
+      const matchAgent = filterAgent ? t.assignedAgent?._id === filterAgent : true;
       const matchDate = filterDate
-        ? new Date(t.createdAt).toISOString().split("T")[0] === filterDate
+        ? new Date(t.updatedAt).toISOString().split("T")[0] === filterDate
         : true;
       return matchUser && matchAgent && matchDate;
     })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // latest first
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   return (
     <div className="p-6">
@@ -149,7 +149,7 @@ const SupportHistory = ({ token }) => {
                 </p>
                 <p>
                   <span className="font-semibold text-black">Agent:</span>{" "}
-                  {t.agent?.name || "Unassigned"}
+                  {t.assignedAgent?.name || "Unassigned"}
                 </p>
               </div>
 

@@ -1,44 +1,20 @@
 // src/pages/AdminDashboard.jsx
 import { useState, useEffect, useRef } from "react";
-import { FaBars, FaHeadset, FaUsers, FaHandsHelping, FaHistory, FaPlus } from "react-icons/fa";
+import { FaBars, FaHeadset, FaUsers, FaHandsHelping, FaHistory, FaPlus, FaBell } from "react-icons/fa";
 import Users from "../components/Users";
 import ActiveSupport from "../components/ActiveSupport";
 import SupportHistory from "../components/SupportHistory";
 import NewTicket from "../components/NewTicket";
-import axios from "axios";
+import DashboardCounters from "../components/DashboardCounters";
+import AdminDashboardNotifications, { AdminNotifications } from "../components/Notifications";
 
 const AdminDashboard = () => {
-  const [tickets, setTickets] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeView, setActiveView] = useState("dashboard");
   const [showNewTicket, setShowNewTicket] = useState(false);
-
   const sidebarRef = useRef(null);
   const modalRef = useRef(null);
   const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const ticketRes = await axios.get("http://localhost:5000/api/tickets", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTickets(ticketRes.data);
-
-        const usersRes = await axios.get("http://localhost:5000/api/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(usersRes.data);
-
-        setLoading(false);
-      } catch (err) {
-        console.error("fetchData error:", err);
-      }
-    };
-    fetchData();
-  }, [token]);
 
   // Close sidebar when clicking outside
   useEffect(() => {
@@ -58,22 +34,11 @@ const AdminDashboard = () => {
         setShowNewTicket(false);
       }
     };
-
     if (showNewTicket) {
       document.addEventListener("mousedown", handleClickOutsideModal);
     }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutsideModal);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutsideModal);
   }, [showNewTicket]);
-
-  if (loading) return <p className="text-center mt-10 text-lg font-medium">Loading...</p>;
-
-  // Counters
-  const totalDone = tickets.filter((t) => t.status === "Resolved").length;
-  const totalPending = tickets.filter((t) => t.status === "Open").length;
-  const totalOngoing = tickets.filter((t) => t.status === "In Progress").length;
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -110,6 +75,12 @@ const AdminDashboard = () => {
           >
             <FaHistory /> Support History
           </li>
+          <li
+            className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
+            onClick={() => { setActiveView("notification"); setMenuOpen(false); }}
+          >
+            <FaBell /> Notifications
+          </li>
         </ul>
       </div>
 
@@ -133,37 +104,36 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Main views */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeView === "dashboard" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition-transform duration-300">
-                <h2 className="text-gray-500">Supports Done</h2>
-                <p className="text-3xl font-bold text-green-600">{totalDone}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition-transform duration-300">
-                <h2 className="text-gray-500">Pending Supports</h2>
-                <p className="text-3xl font-bold text-yellow-600">{totalPending}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition-transform duration-300">
-                <h2 className="text-gray-500">Ongoing Supports</h2>
-                <p className="text-3xl font-bold text-blue-600">{totalOngoing}</p>
-              </div>
-            </div>
-          )}
-          {activeView === "users" && <Users token={token} />}
-          {activeView === "active" && <ActiveSupport token={token} />}
-          {activeView === "history" && <SupportHistory token={token} />}
-        </div>
+{/* Main views */}
+<div className="flex-1 overflow-y-auto p-6">
+  {activeView === "dashboard" && (
+    <div className="flex flex-col gap-6">
+      {/* Counters: full width */}
+      <div className="w-full">
+        <DashboardCounters token={token} />
+      </div>
+
+      {/* Notifications: half width below counters */}
+      <div className="w-full md:w-1/2">
+        <AdminDashboardNotifications token={token} />
+      </div>
+    </div>
+  )}
+
+  {activeView === "users" && <Users token={token} />}
+  {activeView === "active" && <ActiveSupport token={token} />}
+  {activeView === "history" && <SupportHistory token={token} />}
+  {activeView === "notification" && <AdminNotifications token={token}/>}
+</div>
+
+
+        
 
         {/* New Ticket Modal */}
         {showNewTicket && (
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="absolute inset-0 bg-black opacity-40"></div>
-            <div
-              ref={modalRef}
-              className=" p-6 rounded z-10 w-[550px]"
-            >
+            <div ref={modalRef} className="p-6 rounded z-10 w-[550px]">
               <NewTicket token={token} onClose={() => setShowNewTicket(false)} />
             </div>
           </div>

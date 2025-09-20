@@ -13,7 +13,13 @@ const ActiveSupport = ({ token }) => {
         const res = await axios.get("http://localhost:5000/api/tickets", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTickets(res.data);
+
+        // Filter & sort here
+        const filtered = res.data
+          .filter((t) => t.status === "Open" || t.status === "In Progress")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        setTickets(filtered);
       } catch (err) {
         console.error("Error fetching tickets:", err);
       }
@@ -38,14 +44,24 @@ const ActiveSupport = ({ token }) => {
     try {
       const res = await axios.put(
         `http://localhost:5000/api/tickets/${id}`,
-        { status: newStatus, assignedAgent: newAgent },
+        { 
+          status: newStatus, 
+          assignedAgent: newAgent || null   // make sure it's only _id or null
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setTickets((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+
+      setTickets((prev) =>
+        prev
+          .map((t) => (t._id === id ? res.data : t))
+          .filter((t) => t.status === "Open" || t.status === "In Progress")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      );
     } catch (err) {
-      console.error("Error updating ticket:", err);
+      console.error("Error updating ticket:", err.response?.data || err);
     }
   };
+
 
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
@@ -63,6 +79,11 @@ const ActiveSupport = ({ token }) => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6">Active Support Tickets</h2>
       <div className="space-y-4">
+        {tickets.length === 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-gray-500">
+            No active tickets found.
+          </div>
+        )}
         {tickets.map((t) => (
           <div
             key={t._id}
@@ -72,7 +93,7 @@ const ActiveSupport = ({ token }) => {
             <div className="flex-1 mb-3 md:mb-0">
               <p className="text-lg font-semibold">{t.title}</p>
               <p className="text-sm text-gray-600">
-                Raised By: {t.user?.name || "Unknown"}
+                Raised By: {t.raisedBy?.name || "Unknown"}
               </p>
               <p className="text-sm text-gray-600">
                 Raised Time: {format(new Date(t.createdAt), "dd MMM yyyy, hh:mm a")}
@@ -87,7 +108,6 @@ const ActiveSupport = ({ token }) => {
               <p className="text-sm text-gray-600">
                 Status Changed By: {t.statusChangedBy?.name || "N/A"}
               </p>
-
             </div>
 
             {/* Right section: Actions */}

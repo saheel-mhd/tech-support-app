@@ -7,7 +7,8 @@ export const getTickets = async (req, res) => {
     const tickets = await Ticket.find()
       .populate("user", "name email")
       .populate("assignedAgent", "name email")
-      .populate("statusChangedBy", "name email");
+      .populate("statusChangedBy", "name email")
+      .populate("raisedBy", "name email");;
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -18,13 +19,12 @@ export const getTickets = async (req, res) => {
 export const createTicket = async (req, res) => {
   const { title, description, priority, user, assignedAgent, dueDate, status } = req.body;
 
-  // Validate required fields
   if (!title || !user) {
     return res.status(400).json({ message: "Title and user are required" });
   }
 
   try {
-    const ticket = await Ticket.create({
+    let ticket = await Ticket.create({
       title,
       description: description || "",
       priority: priority || "Low",
@@ -32,14 +32,17 @@ export const createTicket = async (req, res) => {
       assignedAgent: assignedAgent || null,
       dueDate: dueDate || new Date(),
       status: status || "Open",
+      raisedBy: req.user?._id || null, // whoever is creating the ticket
       statusChangedBy: null,
     });
 
-    const populatedTicket = await ticket
-      .populate("user", "name email")
-      .populate("assignedAgent", "name email");
+    ticket = await ticket.populate([
+      { path: "user", select: "name email" },
+      { path: "assignedAgent", select: "name email" },
+      { path: "raisedBy", select: "name email" }, // populate raisedBy
+    ]);
 
-    res.status(201).json(populatedTicket);
+    res.status(201).json(ticket);
   } catch (error) {
     console.error("Error creating ticket:", error.message);
     res.status(500).json({ message: "Failed to create ticket", error: error.message });
@@ -48,7 +51,7 @@ export const createTicket = async (req, res) => {
 
 
 
-// Update ticket status or assigned agent
+
 export const updateTicketStatus = async (req, res) => {
   const { id } = req.params;
   const { status, assignedAgent } = req.body;
@@ -57,26 +60,29 @@ export const updateTicketStatus = async (req, res) => {
     const ticket = await Ticket.findById(id);
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
-    // Only update statusChangedBy if status changes
     if (status && status !== ticket.status) {
       ticket.status = status;
-      ticket.statusChangedBy = req.user? req.user._id : null; // user making the change
+      ticket.statusChangedBy = req.user ? req.user._id : null;
     }
 
-    // Update agent separately (does NOT affect statusChangedBy)
-    if (assignedAgent) {
-      ticket.assignedAgent = assignedAgent;
+    if (assignedAgent !== undefined) {
+      ticket.assignedAgent = assignedAgent || null;
     }
 
     const updatedTicket = await ticket.save();
 
-    const populatedTicket = await updatedTicket
-      .populate("user", "name email")
-      .populate("assignedAgent", "name email")
-      .populate("statusChangedBy", "name email");
+    // Populate correctly with array syntax
+  const populatedTicket = await updatedTicket.populate([
+    { path: "user", select: "name email" },
+    { path: "assignedAgent", select: "name email" },
+    { path: "statusChangedBy", select: "name email" },
+    { path: "raisedBy", select: "name email" }, // populate raisedBy
+  ]);
+
 
     res.json(populatedTicket);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error updating ticket:", error.message);
+    res.status(500).json({ message: "Failed to update ticket", error: error.message });
   }
 };

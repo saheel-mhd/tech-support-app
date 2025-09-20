@@ -4,7 +4,7 @@ import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
 const NewTicket = ({ token, onTicketCreated, onClose }) => {
-  const todayDate = new Date().toISOString().split("T")[0]; 
+  const todayDate = new Date().toISOString().split("T")[0];
   const [issue, setIssue] = useState("");
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("Low");
@@ -17,7 +17,6 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Fetch agents and users
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -47,18 +46,17 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
         "http://localhost:5000/api/tickets",
         {
           title: issue,
-          description: notes || "", // optional
+          description: notes || "",
           priority: priority || "Low",
           assignedAgent,
           user: selectedUser,
-          dueDate: dueDate ? new Date(dueDate) : new Date(),
-          status: status || "Open",
+          dueDate, // keep as string "YYYY-MM-DD"
+          status: status || "Open", // must be Open | In Progress | Closed
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setSuccess(true);
-
       if (onTicketCreated) onTicketCreated();
 
       setTimeout(() => {
@@ -75,7 +73,7 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
       setDueDate(todayDate);
       setStatus("Open");
     } catch (err) {
-      console.error("Error creating ticket:", err);
+      console.error("Error creating ticket:", err.response?.data || err.message);
       alert("Failed to create ticket. Check console for details.");
     } finally {
       setLoading(false);
@@ -174,6 +172,20 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
                   onChange={(e) => setDueDate(e.target.value)}
                   required
                 />
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block mb-1 font-medium">Status</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option>Open</option>
+                  <option>In Progress</option>
+                  <option>Closed</option>
+                </select>
               </div>
 
               <button

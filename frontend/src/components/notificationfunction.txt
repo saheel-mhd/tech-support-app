@@ -1,0 +1,24 @@
+// ---------------- User Dashboard Notification ----------------
+export const userDashboardNotification = async (token) => {
+  return []; // placeholder
+};
+
+// ---------------- Agent Dashboard Notification ----------------
+export const agentDashboardNotification = async (token) => {
+  return []; // placeholder
+};
+
+// ---------------- User Notification Page ----------------
+export const userNotification = async (token) => {
+  return []; // placeholder
+};
+
+// ---------------- Agent Notification Page ----------------
+export const agentNotification = async (token) => {
+  return []; // placeholder
+};
+
+// ---------------- Admin Notification Page ----------------
+export const adminNotification = async (token) => {
+  return []; // placeholder
+};

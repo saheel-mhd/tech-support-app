@@ -1,3 +1,4 @@
+// ./models/Ticket.js
 import mongoose from "mongoose";
 
 const ticketSchema = new mongoose.Schema(
@@ -16,11 +17,13 @@ const ticketSchema = new mongoose.Schema(
     },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    statusChangedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // <--- add this
+    raisedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // NEW
+    statusChangedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     dueDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
+
 
 const Ticket = mongoose.model("Ticket", ticketSchema);
 
