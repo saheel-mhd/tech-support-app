@@ -1,6 +1,15 @@
-// src/pages/AdminDashboard.jsx
 import { useState, useEffect, useRef } from "react";
-import { FaBars, FaHeadset, FaUsers, FaHandsHelping, FaHistory, FaPlus, FaBell } from "react-icons/fa";
+import {
+  FaBars,
+  FaHeadset,
+  FaUsers,
+  FaHandsHelping,
+  FaHistory,
+  FaPlus,
+  FaBell,
+  FaSignOutAlt,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import Users from "../components/Users";
 import ActiveSupport from "../components/ActiveSupport";
 import SupportHistory from "../components/SupportHistory";
@@ -15,6 +24,12 @@ const AdminDashboard = () => {
   const sidebarRef = useRef(null);
   const modalRef = useRef(null);
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   // Close sidebar when clicking outside
   useEffect(() => {
@@ -47,41 +62,68 @@ const AdminDashboard = () => {
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-64 bg-gray-900 text-white transform ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out z-50 shadow-lg`}
+        } transition-transform duration-300 ease-in-out z-50 shadow-lg flex flex-col`}
       >
         <div className="p-6 text-2xl font-bold border-b border-gray-700">Admin Menu</div>
-        <ul className="mt-6 space-y-4">
+
+        {/* Menu items */}
+        <ul className="mt-6 space-y-4 flex-1">
           <li
             className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
-            onClick={() => { setActiveView("dashboard"); setMenuOpen(false); }}
+            onClick={() => {
+              setActiveView("dashboard");
+              setMenuOpen(false);
+            }}
           >
             <FaHeadset /> Dashboard
           </li>
           <li
             className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
-            onClick={() => { setActiveView("users"); setMenuOpen(false); }}
+            onClick={() => {
+              setActiveView("users");
+              setMenuOpen(false);
+            }}
           >
             <FaUsers /> Users
           </li>
           <li
             className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
-            onClick={() => { setActiveView("active"); setMenuOpen(false); }}
+            onClick={() => {
+              setActiveView("active");
+              setMenuOpen(false);
+            }}
           >
             <FaHandsHelping /> Active Support
           </li>
           <li
             className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
-            onClick={() => { setActiveView("history"); setMenuOpen(false); }}
+            onClick={() => {
+              setActiveView("history");
+              setMenuOpen(false);
+            }}
           >
             <FaHistory /> Support History
           </li>
           <li
             className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
-            onClick={() => { setActiveView("notification"); setMenuOpen(false); }}
+            onClick={() => {
+              setActiveView("notification");
+              setMenuOpen(false);
+            }}
           >
             <FaBell /> Notifications
           </li>
         </ul>
+
+        {/* Logout button pinned to bottom */}
+        <div className="p-6 border-t border-gray-700">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition text-white font-medium"
+          >
+            <FaSignOutAlt /> Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -104,30 +146,24 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-{/* Main views */}
-<div className="flex-1 overflow-y-auto p-6">
-  {activeView === "dashboard" && (
-    <div className="flex flex-col gap-6">
-      {/* Counters: full width */}
-      <div className="w-full">
-        <DashboardCounters token={token} />
-      </div>
+        {/* Main views */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeView === "dashboard" && (
+            <div className="flex flex-col gap-6">
+              <div className="w-full">
+                <DashboardCounters token={token} />
+              </div>
+              <div className="w-full md:w-1/2">
+                <AdminDashboardNotifications token={token} />
+              </div>
+            </div>
+          )}
 
-      {/* Notifications: half width below counters */}
-      <div className="w-full md:w-1/2">
-        <AdminDashboardNotifications token={token} />
-      </div>
-    </div>
-  )}
-
-  {activeView === "users" && <Users token={token} />}
-  {activeView === "active" && <ActiveSupport token={token} />}
-  {activeView === "history" && <SupportHistory token={token} />}
-  {activeView === "notification" && <AdminNotifications token={token}/>}
-</div>
-
-
-        
+          {activeView === "users" && <Users token={token} />}
+          {activeView === "active" && <ActiveSupport token={token} />}
+          {activeView === "history" && <SupportHistory token={token} />}
+          {activeView === "notification" && <AdminNotifications token={token} />}
+        </div>
 
         {/* New Ticket Modal */}
         {showNewTicket && (

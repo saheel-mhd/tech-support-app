@@ -7,20 +7,20 @@ connectDB();
 
 const createAdmin = async () => {
   try {
-    const adminExists = await User.findOne({ email: "admin@example.com" });
+    const adminExists = await User.findOne({ email: "admin@s.com" });
     if (adminExists) {
       console.log("Admin already exists!");
       process.exit();
     }
 
     const admin = await User.create({
-      name: "Admin",
-      email: "admin@example.com",
+      name: "Adin",
+      email: "admin@s.com",
       password: "Admin@123", // will be hashed automatically
       role: "admin",
     });
 
-    console.log("Admin created:", admin);
+    console.log("Adin created:", admin);
     process.exit();
   } catch (error) {
     console.error(error);
