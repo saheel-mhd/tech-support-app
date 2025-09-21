@@ -47,7 +47,7 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
         "http://localhost:5000/api/tickets",
         {
           title: issue,
-          description: notes || "", // optional
+          description: notes || "",
           priority: priority || "Low",
           assignedAgent,
           user: selectedUser,
@@ -174,6 +174,20 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
                   onChange={(e) => setDueDate(e.target.value)}
                   required
                 />
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block mb-1 font-medium">Status</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option>Open</option>
+                  <option>In Progress</option>
+                  <option>Closed</option>
+                </select>
               </div>
 
               <button

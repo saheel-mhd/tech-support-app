@@ -15,8 +15,9 @@ const ticketSchema = new mongoose.Schema(
       default: "Low",
     },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    raisedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, 
     assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    statusChangedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // <--- add this
+    statusChangedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     dueDate: { type: Date, default: Date.now },
   },
   { timestamps: true }

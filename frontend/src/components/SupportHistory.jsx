@@ -11,7 +11,13 @@ const SupportHistory = ({ token }) => {
         const res = await axios.get("http://localhost:5000/api/tickets", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTickets(res.data);
+
+        // Sort by updatedAt descending (latest updated first)
+        const sortedTickets = res.data.sort(
+          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+
+        setTickets(sortedTickets);
       } catch (err) {
         console.error("Error fetching support history:", err);
       }
@@ -35,11 +41,11 @@ const SupportHistory = ({ token }) => {
     switch (status?.toLowerCase()) {
       case "open":
         return "bg-yellow-200 text-yellow-800";
-      case "inprogress":
       case "in progress":
+      case "inprogress":
         return "bg-blue-200 text-blue-800";
-      case "done":
       case "closed":
+      case "done":
         return "bg-green-200 text-green-800";
       default:
         return "bg-gray-200 text-gray-700";
@@ -50,6 +56,10 @@ const SupportHistory = ({ token }) => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6">Support History</h2>
       <div className="space-y-6">
+        {tickets.length === 0 && (
+          <p className="p-4 text-gray-400 italic">No tickets found.</p>
+        )}
+
         {tickets.map((t) => (
           <div
             key={t._id}
@@ -67,8 +77,8 @@ const SupportHistory = ({ token }) => {
                 {t.raisedBy?.name || "—"}
               </p>
               <p>
-                <span className="font-semibold text-black">Agent:</span>{" "}
-                {t.agent?.name || "Unassigned"}
+                <span className="font-semibold text-black">Assigned Agent:</span>{" "}
+                {t.assignedAgent?.name || "Unassigned"}
               </p>
             </div>
 
@@ -79,7 +89,7 @@ const SupportHistory = ({ token }) => {
                   t.priority || "low"
                 )}`}
               >
-                Priority: {t.priority || "Normal"}
+                Priority: {t.priority || "Low"}
               </span>
 
               <span
@@ -103,8 +113,7 @@ const SupportHistory = ({ token }) => {
               </p>
               <p>
                 <span className="font-semibold text-black">Closed:</span>{" "}
-                {t.status?.toLowerCase() === "done" ||
-                t.status?.toLowerCase() === "closed"
+                {t.status?.toLowerCase() === "closed" || t.status?.toLowerCase() === "done"
                   ? new Date(t.updatedAt).toLocaleString()
                   : "—"}
               </p>

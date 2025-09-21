@@ -1,3 +1,4 @@
+// ./src/app.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
@@ -8,7 +9,7 @@ function App() {
   const role = localStorage.getItem("role");
 
   return (
-    <Routes>
+    <Routes> 
       <Route path="/login" element={<Login />} />
 
       {/* Role-based routes */}
