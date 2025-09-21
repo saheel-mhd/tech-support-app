@@ -1,9 +1,10 @@
+// src/components/Users.jsx
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../utils/axiosInstance";
 import CreateUser from "./CreateUser";
 import EditUser from "./EditUser";
 
-const Users = ({ token }) => {
+const Users = () => {
   const [users, setUsers] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState(null);
@@ -11,9 +12,7 @@ const Users = ({ token }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/users"); // token auto-attached
       setUsers(res.data);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -22,9 +21,7 @@ const Users = ({ token }) => {
 
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/users/${id}`);
       setUsers((prev) => prev.filter((u) => u._id !== id));
       alert("User deleted!");
     } catch (err) {
@@ -35,7 +32,7 @@ const Users = ({ token }) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, []);
 
   // Group users by role
   const groupedUsers = users.reduce(
@@ -133,7 +130,6 @@ const Users = ({ token }) => {
       {/* CreateUser modal */}
       {showCreate && (
         <CreateUser
-          token={token}
           onUserCreated={fetchUsers}
           onClose={() => setShowCreate(false)}
         />
@@ -142,7 +138,6 @@ const Users = ({ token }) => {
       {/* EditUser modal */}
       {editUser && (
         <EditUser
-          token={token}
           user={editUser}
           onUserUpdated={fetchUsers}
           onClose={() => setEditUser(null)}
