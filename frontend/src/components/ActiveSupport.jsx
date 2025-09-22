@@ -7,6 +7,7 @@ const ActiveSupport = ({ token, role }) => {
   const [tickets, setTickets] = useState([]);
   const [agents, setAgents] = useState([]);
 
+
   useEffect(() => {
     const fetchTickets = async () => {
       try {

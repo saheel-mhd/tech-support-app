@@ -8,6 +8,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaPlus,
+  FaBell,
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +16,7 @@ import Users from "../components/Users";
 import ActiveSupport from "../components/ActiveSupport";
 import SupportHistory from "../components/SupportHistory";
 import NewTicket from "../components/NewTicket";
+import { AgentDashboardNotifications, AgentNotifications } from "../components/Notifications";
 
 const AgentDashboard = () => {
   const [tickets, setTickets] = useState([]);
@@ -101,6 +103,14 @@ const AgentDashboard = () => {
             >
               <FaHistory /> Support History
             </li>
+            <li
+            className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transistion"
+            onClick={() => {
+              setActiveView("notification");
+            }} 
+            >
+              <FaBell /> Notifications
+            </li>
           </ul>
         </div>
 
@@ -142,9 +152,17 @@ const AgentDashboard = () => {
           {activeView === "dashboard" && (
             <p className="text-gray-600">Use the "New Ticket" button above to create tickets.</p>
           )}
+          {activeView === "dashboard" && (
+            <div className="flex flex-col gap-6">
+              <div className="w-full md:w-1/2">
+              <AgentDashboardNotifications token={token}/>
+              </div>
+            </div>
+          )}
           {activeView === "users" && <Users />}
-          {activeView === "active" && <ActiveSupport token={token} role={role}/>}
+          {activeView === "active" && <ActiveSupport token={token} role={role} />}
           {activeView === "history" && <SupportHistory token={token} />}
+          {activeView === "notification" && <AgentNotifications token={token} />}
         </div>
       </div>
     </div>

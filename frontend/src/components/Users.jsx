@@ -20,8 +20,7 @@ const Users = ({ token }) => {
         },
       });
 
-      console.log("Users:", data);
-      setUsers(data); // ✅ store users in state
+      setUsers(data); 
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -29,7 +28,7 @@ const Users = ({ token }) => {
 
   const deleteUser = async (id) => {
     try {
-      const token = localStorage.getItem("token"); // ✅ get token from storage
+      const token = localStorage.getItem("token"); 
       await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -45,7 +44,7 @@ const Users = ({ token }) => {
   useEffect(() => {
     fetchUsers();
 
-    // ✅ get current role from localStorage (or context/redux)
+
     const role = localStorage.getItem("role");
     setCurrentRole(role);
   }, [token]);

@@ -6,13 +6,16 @@ import {
   FaHistory,
   FaSignOutAlt,
   FaPlus,
+  FaBell,
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import NewTicket from "../components/NewTicket";
 import SupportHistory from "../components/SupportHistory";
-import ActiveSupport   from "../components/ActiveSupport"; // make sure you export the user version
+import ActiveSupport   from "../components/ActiveSupport"; 
 import Users from "../components/Users";
+import { UserNotifications, UserDashboardNotifications } from "../components/Notifications";
+
 
 const UserDashboard = () => {
   const [tickets, setTickets] = useState([]);
@@ -90,6 +93,13 @@ const UserDashboard = () => {
             >
               <FaHistory /> Support History
             </li>
+            <li className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition"
+              onClick={() => {
+                setActiveView("notification");
+              }}
+            >
+              <FaBell /> Notifications
+            </li>
           </ul>
         </div>
 
@@ -125,6 +135,7 @@ const UserDashboard = () => {
             </div>
           </div>
         )}
+        
 
         <div className="flex-1 overflow-y-auto p-6">
           {activeView === "dashboard" && (
@@ -132,9 +143,17 @@ const UserDashboard = () => {
               Use the "New Ticket" button above to create support tickets.
             </p>
           )}
+          {activeView === "dashboard" && ( 
+            <div className="flex flex-col gap-6">
+              <div className="w-full md:w-1/2">
+                <UserDashboardNotifications token={token} />
+              </div>
+            </div>
+          )}
           {activeView === "users" && <Users />}
           {activeView === "active" && <ActiveSupport token={token} role={role}/>}
           {activeView === "history" && <SupportHistory token={token} />}
+          {activeView === "notification" && <UserNotifications token={token} />}
         </div>
       </div>
     </div>
