@@ -9,19 +9,27 @@ const Users = ({ token }) => {
   const [editUser, setEditUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [currentRole, setCurrentRole] = useState(null);
+
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get("http://localhost:5000/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Error fetching users:", err);
+
+      console.log("Users:", data);
+      setUsers(data); // ✅ store users in state
+    } catch (error) {
+      console.error("Error fetching users:", error);
     }
   };
 
   const deleteUser = async (id) => {
     try {
+      const token = localStorage.getItem("token"); // ✅ get token from storage
       await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -33,8 +41,13 @@ const Users = ({ token }) => {
     }
   };
 
+
   useEffect(() => {
     fetchUsers();
+
+    // ✅ get current role from localStorage (or context/redux)
+    const role = localStorage.getItem("role");
+    setCurrentRole(role);
   }, [token]);
 
   // Filter users by search term
@@ -62,18 +75,22 @@ const Users = ({ token }) => {
         <p className="text-sm text-gray-600">{u.email}</p>
       </div>
       <div className="flex space-x-2">
-        <button
-          className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500 transition"
-          onClick={() => setEditUser(u)}
-        >
-          Edit
-        </button>
-        <button
-          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
-          onClick={() => deleteUser(u._id)}
-        >
-          Delete
-        </button>
+        {(currentRole === "admin" || currentRole === "agent") && (
+          <>
+            <button
+              className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500 transition"
+              onClick={() => setEditUser(u)}
+            >
+              Edit
+            </button>
+            <button
+              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+              onClick={() => deleteUser(u._id)}
+            >
+              Delete
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -94,12 +111,14 @@ const Users = ({ token }) => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full md:w-64"
           />
-          <button
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 shadow-lg transition transform hover:scale-105"
-            onClick={() => setShowCreate(true)}
-          >
-            Create User
-          </button>
+          {(currentRole === "admin" || currentRole === "agent") && (
+            <button
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 shadow-lg transition transform hover:scale-105"
+              onClick={() => setShowCreate(true)}
+            >
+              Create User
+            </button>
+          )}
         </div>
       </div>
 
@@ -107,7 +126,9 @@ const Users = ({ token }) => {
       {["user", "agent", "admin"].map((role) =>
         grouped[role].length > 0 ? (
           <div key={role} className="mb-6">
-            <h3 className="text-xl font-semibold mb-3 capitalize text-gray-700">{role}s</h3>
+            <h3 className="text-xl font-semibold mb-3 capitalize text-gray-700">
+              {role}s
+            </h3>
             {grouped[role].map(renderUserTile)}
           </div>
         ) : null

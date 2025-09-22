@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 
-const ActiveSupport = ({ token }) => {
+const ActiveSupport = ({ token, role }) => {
   const [tickets, setTickets] = useState([]);
   const [agents, setAgents] = useState([]);
 
@@ -46,7 +46,7 @@ const ActiveSupport = ({ token }) => {
         `http://localhost:5000/api/tickets/${id}`,
         { 
           status: newStatus, 
-          assignedAgent: newAgent || null   // make sure it's only _id or null
+          assignedAgent: newAgent || null
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -61,7 +61,6 @@ const ActiveSupport = ({ token }) => {
       console.error("Error updating ticket:", err.response?.data || err);
     }
   };
-
 
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
@@ -112,6 +111,7 @@ const ActiveSupport = ({ token }) => {
 
             {/* Right section: Actions */}
             <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+              {/* Status Dropdown */}
               <div className="mb-2 md:mb-0">
                 <label className="block text-sm font-medium">Status</label>
                 <select
@@ -120,25 +120,30 @@ const ActiveSupport = ({ token }) => {
                   onChange={(e) => updateTicket(t._id, e.target.value, t.assignedAgent)}
                 >
                   <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
+                  {role !== "user" && <option value="In Progress">In Progress</option>}
                   <option value="Closed">Closed</option>
                 </select>
               </div>
 
+              {/* Assigned Agent */}
               <div>
                 <label className="block text-sm font-medium">Assigned Agent</label>
-                <select
-                  className="border rounded px-2 py-1"
-                  value={t.assignedAgent?._id || ""}
-                  onChange={(e) => updateTicket(t._id, t.status, e.target.value)}
-                >
-                  <option value="">Unassigned</option>
-                  {agents.map((a) => (
-                    <option key={a._id} value={a._id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                {role === "user" ? (
+                  <p className="text-gray-700">{t.assignedAgent?.name || "Unassigned"}</p>
+                ) : (
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={t.assignedAgent?._id || ""}
+                    onChange={(e) => updateTicket(t._id, t.status, e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {agents.map((a) => (
+                      <option key={a._id} value={a._id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
@@ -9,6 +9,16 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
   const [role, setRole] = useState("user");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [currentRole, setCurrentRole] = useState(null);
+
+  useEffect(() => {
+    // get current role from localStorage or context
+    const storedRole = localStorage.getItem("role");
+    setCurrentRole(storedRole);
+
+    // If agent, force role to "user"
+    if (storedRole === "agent") setRole("user");
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +30,18 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
 
     setLoading(true);
     try {
+      const storedToken = token || localStorage.getItem("token");
+
+      if (!storedToken) {
+        alert("No token found. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
       await axios.post(
         "http://localhost:5000/api/users",
         { name, email, password, role },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${storedToken}` } }
       );
 
       setSuccess(true);
@@ -37,7 +55,7 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
       setName("");
       setEmail("");
       setPassword("");
-      setRole("user");
+      if (currentRole === "admin") setRole("user");
     } catch (err) {
       console.error("Error creating user:", err);
       alert("Failed to create user. Check console for details.");
@@ -65,6 +83,7 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block mb-1 font-medium">Email</label>
                 <input
@@ -75,6 +94,7 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block mb-1 font-medium">Password</label>
                 <input
@@ -85,18 +105,22 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
                   required
                 />
               </div>
-              <div>
-                <label className="block mb-1 font-medium">Role</label>
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <option value="user">User</option>
-                  <option value="agent">Agent</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
+
+              {currentRole === "admin" && (
+                <div>
+                  <label className="block mb-1 font-medium">Role</label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                  >
+                    <option value="user">User</option>
+                    <option value="agent">Agent</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              )}
+
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"

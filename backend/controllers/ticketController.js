@@ -4,16 +4,44 @@ import Ticket from "../models/Ticket.js";
 // Get all tickets (Admin/Agent)
 export const getTickets = async (req, res) => {
   try {
-    const tickets = await Ticket.find()
-      .populate("user", "name email")
-      .populate("assignedAgent", "name email")
-      .populate("statusChangedBy", "name email")
-      .populate("raisedBy", "name email");;
+    let tickets;
+
+    if (req.user.role === "admin") {
+      // Admin can see all tickets
+      tickets = await Ticket.find()
+        .populate("user", "name email")
+        .populate("assignedAgent", "name email")
+        .populate("statusChangedBy", "name email")
+        .populate("raisedBy", "name email");
+    } else if (req.user.role === "agent") {
+      // Agents see only tickets assigned to them
+      tickets = await Ticket.find({ assignedAgent: req.user._id })
+        .populate("user", "name email")
+        .populate("assignedAgent", "name email")
+        .populate("statusChangedBy", "name email")
+        .populate("raisedBy", "name email");
+    } else if (req.user.role ==="user") {
+      tickets = await Ticket.find({ 
+        $or: [
+          { raisedBy: req.user._id },
+          { user: req.user._id },
+        ],
+       }).populate([
+        { path: "user", select: "name email" },
+        { path: "assignedAgent", select: "name email" },
+        { path: "statusChangedBy", select: "name email" },
+        { path: "raisedBy", select: "name email" },
+       ]);
+    } else {
+      return res.status(403).json({ message: "Forbidden: Users cannot access tickets" });
+    }
+
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Create a ticket
 export const createTicket = async (req, res) => {
