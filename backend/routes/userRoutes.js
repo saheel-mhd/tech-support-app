@@ -7,7 +7,7 @@ import { getUsers, createUser, deleteUser, updateUser } from "../controllers/use
 const router = express.Router();
 
 // Admin can view all users
-router.get("/", protect, adminOrAgent, getUsers);
+router.get("/",  getUsers);
 
 // Admin can create a new user
 router.post("/", protect, adminOrAgent, createUser);

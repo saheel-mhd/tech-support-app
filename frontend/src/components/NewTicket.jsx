@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
-const NewTicket = ({ token, onTicketCreated, onClose }) => {
+const NewTicket = ({ token, onTicketCreated, onClose, role, userId }) => {
   const todayDate = new Date().toISOString().split("T")[0];
   const [issue, setIssue] = useState("");
   const [notes, setNotes] = useState("");
@@ -11,7 +11,7 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
   const [assignedAgent, setAssignedAgent] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [dueDate, setDueDate] = useState(todayDate);
-  const [status, setStatus] = useState("Open"); 
+  const [status, setStatus] = useState("Open");
   const [agents, setAgents] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,11 +32,28 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
     fetchData();
   }, [token]);
 
+  useEffect(() => {
+    if (role === "user") {
+      setStatus("Open"); // force "Open" for normal users
+    }
+    if (role === "agent") {
+      setAssignedAgent(userId); // auto-assign logged-in agent
+    }
+  }, [role, userId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!issue || !selectedUser || !assignedAgent) {
-      alert("Please fill in required fields (Issue, User, Agent).");
+    if (!issue) {
+      alert("Please enter the issue.");
+      return;
+    }
+    if (role === "admin" && (!selectedUser || !assignedAgent)) {
+      alert("Please select a user and assign an agent.");
+      return;
+    }
+    if (role === "agent" && !selectedUser) {
+      alert("Please select a user.");
       return;
     }
 
@@ -48,10 +65,10 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
           title: issue,
           description: notes || "",
           priority: priority || "Low",
-          assignedAgent,
-          user: selectedUser,
-          dueDate, // keep as string "YYYY-MM-DD"
-          status: status || "Open", // must be Open | In Progress | Closed
+          assignedAgent: role === "admin" ? assignedAgent : role === "agent" ? userId : null,
+          user: role === "user" ? userId : selectedUser,
+          dueDate,
+          status: role === "user" ? "Open" : status,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -68,7 +85,7 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
       setIssue("");
       setNotes("");
       setPriority("Low");
-      setAssignedAgent("");
+      setAssignedAgent(role === "agent" ? userId : "");
       setSelectedUser("");
       setDueDate(todayDate);
       setStatus("Open");
@@ -126,41 +143,45 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
                 </select>
               </div>
 
-              {/* Select User */}
-              <div>
-                <label className="block mb-1 font-medium">Select User</label>
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  required
-                >
-                  <option value="">-- Select User --</option>
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Select User (admin & agent only) */}
+              {role !== "user" && (
+                <div>
+                  <label className="block mb-1 font-medium">Select User</label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Select User --</option>
+                    {users.map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {/* Assign Agent */}
-              <div>
-                <label className="block mb-1 font-medium">Assign Agent</label>
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={assignedAgent}
-                  onChange={(e) => setAssignedAgent(e.target.value)}
-                  required
-                >
-                  <option value="">-- Select Agent --</option>
-                  {agents.map((agent) => (
-                    <option key={agent._id} value={agent._id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Assign Agent (admin only) */}
+              {role === "admin" && (
+                <div>
+                  <label className="block mb-1 font-medium">Assign Agent</label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={assignedAgent}
+                    onChange={(e) => setAssignedAgent(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Select Agent --</option>
+                    {agents.map((agent) => (
+                      <option key={agent._id} value={agent._id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Due Date */}
               <div>
@@ -174,19 +195,21 @@ const NewTicket = ({ token, onTicketCreated, onClose }) => {
                 />
               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block mb-1 font-medium">Status</label>
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option>Open</option>
-                  <option>In Progress</option>
-                  <option>Closed</option>
-                </select>
-              </div>
+              {/* Status (admin only) */}
+              {role === "admin" && (
+                <div>
+                  <label className="block mb-1 font-medium">Status</label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option>Open</option>
+                    <option>In Progress</option>
+                    <option>Closed</option>
+                  </select>
+                </div>
+              )}
 
               <button
                 type="submit"
