@@ -1,4 +1,4 @@
-// ./components/AdminDashboardNotifications.jsx
+// ./components/Notifications.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { formatDistanceToNow, format } from "date-fns";
