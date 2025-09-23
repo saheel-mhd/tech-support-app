@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import Users from "../components/Users";
 import ActiveSupport from "../components/ActiveSupport";
 import SupportHistory from "../components/SupportHistory";
-import NewTicket from "../components/NewTicket";
+import { AgentNewTicket } from "../components/NewTicket";
 import { AgentDashboardNotifications, AgentNotifications } from "../components/Notifications";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -144,7 +144,7 @@ const AgentDashboard = () => {
         {showNewTicket && (
           <div className="fixed inset-0  flex items-center justify-center z-20">
             <div ref={modalRef} className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-              <NewTicket token={token} onClose={() => setShowNewTicket(false)} />
+              <AgentNewTicket token={token} onClose={() => setShowNewTicket(false)} />
             </div>
           </div>
         )}

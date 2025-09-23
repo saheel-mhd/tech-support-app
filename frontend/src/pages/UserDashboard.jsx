@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import NewTicket from "../components/NewTicket";
+import { UserNewTicket } from "../components/NewTicket";
 import SupportHistory from "../components/SupportHistory";
 import ActiveSupport   from "../components/ActiveSupport"; 
 import Users from "../components/Users";
@@ -131,7 +131,7 @@ const UserDashboard = () => {
         {showNewTicket && (
           <div className="fixed inset-0 flex items-center justify-center z-20 bg-black/30">
             <div ref={modalRef} className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-              <NewTicket token={token} onClose={() => setShowNewTicket(false)} />
+              <UserNewTicket token={token} onClose={() => setShowNewTicket(false)} />
             </div>
           </div>
         )}
