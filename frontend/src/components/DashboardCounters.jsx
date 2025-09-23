@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const DashboardCounters = ({ token, refreshFlag }) => {
   const today = new Date().toISOString().split("T")[0];
   const [counts, setCounts] = useState({
@@ -14,7 +15,7 @@ const DashboardCounters = ({ token, refreshFlag }) => {
 
   const fetchTickets = useCallback(async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tickets/", {
+      const res = await axios.get(`${API_BASE_URL}/tickets/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTickets(res.data || []);

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const ActiveSupport = ({ token, role }) => {
   const [tickets, setTickets] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -11,7 +13,7 @@ const ActiveSupport = ({ token, role }) => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/tickets", {
+        const res = await axios.get(`${API_BASE_URL}/tickets`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -28,7 +30,7 @@ const ActiveSupport = ({ token, role }) => {
 
     const fetchAgents = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/users", {
+        const res = await axios.get(`${API_BASE_URL}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAgents(res.data.filter((u) => u.role === "agent"));
@@ -44,7 +46,7 @@ const ActiveSupport = ({ token, role }) => {
   const updateTicket = async (id, newStatus, newAgent) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/tickets/${id}`,
+        `${API_BASE_URL}/tickets/${id}`,
         { 
           status: newStatus, 
           assignedAgent: newAgent || null

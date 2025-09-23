@@ -3,13 +3,13 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { formatDistanceToNow, format } from "date-fns";
 
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AdminDashboardNotifications = ({ token }) => {
   const [notifications, setNotifications] = useState([]);
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
+      const res = await axios.get(`${API_BASE_URL}/tickets`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -86,7 +86,7 @@ const AdminNotifications = ({ token }) => {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
+      const res = await axios.get(`${API_BASE_URL}/tickets`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -111,7 +111,7 @@ const AdminNotifications = ({ token }) => {
     try {
       // Call your API to mark notifications as read
       await axios.patch(
-        "http://localhost:5000/api/tickets/markAllRead",
+        `${API_BASE_URL}/tickets/markAllRead`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

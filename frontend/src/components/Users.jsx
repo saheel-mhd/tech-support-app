@@ -3,6 +3,7 @@ import axios from "axios";
 import CreateUser from "./CreateUser";
 import EditUser from "./EditUser";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const Users = ({ token }) => {
   const [users, setUsers] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -14,7 +15,7 @@ const Users = ({ token }) => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const { data } = await axios.get("http://localhost:5000/api/users", {
+      const { data } = await axios.get(`${API_BASE_URL}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -29,7 +30,7 @@ const Users = ({ token }) => {
   const deleteUser = async (id) => {
     try {
       const token = localStorage.getItem("token"); 
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`${API_BASE_URL}/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== id));

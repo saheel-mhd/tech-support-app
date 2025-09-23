@@ -18,6 +18,7 @@ import SupportHistory from "../components/SupportHistory";
 import NewTicket from "../components/NewTicket";
 import { AgentDashboardNotifications, AgentNotifications } from "../components/Notifications";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AgentDashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ const AgentDashboard = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/tickets", {
+        const res = await axios.get(`${API_BASE_URL}/tickets`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTickets(res.data);

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const SupportHistory = ({ token }) => {
   const [tickets, setTickets] = useState([]);
   const [users, setUsers] = useState([]);
@@ -15,7 +16,7 @@ const SupportHistory = ({ token }) => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/tickets", {
+        const res = await axios.get(`${API_BASE_URL}/tickets`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTickets(res.data);
@@ -26,7 +27,7 @@ const SupportHistory = ({ token }) => {
 
     const fetchUsersAndAgents = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/users", {
+        const res = await axios.get(`${API_BASE_URL}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(res.data);

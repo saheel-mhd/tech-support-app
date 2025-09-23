@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const NewTicket = ({ token, onTicketCreated, onClose, role, userId }) => {
   const todayDate = new Date().toISOString().split("T")[0];
   const [issue, setIssue] = useState("");
@@ -20,7 +21,7 @@ const NewTicket = ({ token, onTicketCreated, onClose, role, userId }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resUsers = await axios.get("http://localhost:5000/api/users", {
+        const resUsers = await axios.get(`${API_BASE_URL}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(resUsers.data.filter((u) => u.role === "user"));
@@ -60,7 +61,7 @@ const NewTicket = ({ token, onTicketCreated, onClose, role, userId }) => {
     setLoading(true);
     try {
       await axios.post(
-        "http://localhost:5000/api/tickets",
+        `${API_BASE_URL}/tickets`,
         {
           title: issue,
           description: notes || "",

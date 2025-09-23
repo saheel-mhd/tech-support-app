@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const EditUser = ({ token, user, onUserUpdated, onClose }) => {
   const [name, setName] = useState(user.name || "");
   const [email, setEmail] = useState(user.email || "");
@@ -17,7 +18,7 @@ const EditUser = ({ token, user, onUserUpdated, onClose }) => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/users/${user._id}`,
+        `${API_BASE_URL}/users/${user._id}`,
         { name, email, role },
         { headers: { Authorization: `Bearer ${token}` } }
       );

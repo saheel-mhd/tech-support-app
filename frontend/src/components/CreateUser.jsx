@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { CheckCircle } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const CreateUser = ({ token, onUserCreated, onClose }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,7 +40,7 @@ const CreateUser = ({ token, onUserCreated, onClose }) => {
       }
 
       await axios.post(
-        "http://localhost:5000/api/users",
+        `${API_BASE_URL}/users`,
         { name, email, password, role },
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
