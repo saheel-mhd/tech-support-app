@@ -26,7 +26,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/auth", authRoutes);
 
 const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {

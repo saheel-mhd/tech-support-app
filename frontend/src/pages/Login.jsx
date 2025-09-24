@@ -1,46 +1,29 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../redux/slices/authSlice";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  //  Redirect if already logged in
+  // Redux state
+  const { user, loading, error } = useSelector((state) => state.auth);
+
+  // Redirect on login
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-
-    if (token && role) {
-      if (role === "admin") navigate("/admin", { replace: true });
-      else if (role === "agent") navigate("/agent", { replace: true });
-      else if (role === "user") navigate("/user", { replace: true });
+    if (user?.role) {
+      if (user.role === "admin") navigate("/admin", { replace: true });
+      else if (user.role === "agent") navigate("/agent", { replace: true });
+      else if (user.role === "user") navigate("/user", { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    try {
-      const { data } = await axios.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
-
-      // Save token & role & user
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Navigate based on role
-      if (data.role === "user") navigate("/user");
-      else if (data.role === "agent") navigate("/agent");
-      else if (data.role === "admin") navigate("/admin");
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
-    }
+    dispatch(loginUser({ email, password }));
   };
 
   return (
@@ -50,6 +33,8 @@ const Login = () => {
         className="bg-white p-8 rounded shadow-md w-96"
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+
+        {loading && <p className="text-blue-600 mb-4">Logging in...</p>}
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
         <input
@@ -71,6 +56,7 @@ const Login = () => {
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
+          disabled={loading}
         >
           Login
         </button>

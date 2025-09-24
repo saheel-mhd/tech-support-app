@@ -1,44 +1,24 @@
-import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { format } from "date-fns";
+import { fetchTickets } from "../redux/slices/ticketSlice";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const DashboardCounters = ({ token, refreshFlag }) => {
-  const today = new Date().toISOString().split("T")[0];
+const DashboardCounters = ({ refreshFlag }) => {
+  const dispatch = useDispatch();
+  const { tickets, loading, error } = useSelector((state) => state.tickets);
   const [counts, setCounts] = useState({
     totalDone: 0,
     totalPending: 0,
     totalOngoing: 0,
   });
-  const [tickets, setTickets] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
-  const fetchTickets = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/tickets/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTickets(res.data || []);
-    } catch (err) {
-      console.error("Error fetching tickets:", err.response?.data || err.message);
-      setTickets([]);
-    }
-  }, [token]);
-
-  // Initial fetch & interval
+  // Fetch tickets on mount & refreshFlag
   useEffect(() => {
-    fetchTickets();
-    const interval = setInterval(fetchTickets, 5000);
-    return () => clearInterval(interval);
-  }, [fetchTickets]);
+    dispatch(fetchTickets());
+  }, [dispatch, refreshFlag]);
 
-  // Refetch immediately on refreshFlag change (triggered by updates)
-  useEffect(() => {
-    if (refreshFlag) {
-      fetchTickets();
-    }
-  }, [refreshFlag, fetchTickets]);
-
+  // Compute counts whenever tickets or selectedDate change
   useEffect(() => {
     const filteredTickets = selectedDate
       ? tickets.filter((t) => format(new Date(t.createdAt), "yyyy-MM-dd") === selectedDate)
@@ -50,6 +30,9 @@ const DashboardCounters = ({ token, refreshFlag }) => {
 
     setCounts({ totalDone, totalPending, totalOngoing });
   }, [tickets, selectedDate]);
+
+  if (loading) return <p>Loading ticket counts...</p>;
+  if (error) return <p className="text-red-500">Error fetching tickets: {error}</p>;
 
   return (
     <div className="mb-6">

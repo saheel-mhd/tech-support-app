@@ -1,10 +1,12 @@
 // src/components/SupportHistory.jsx
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTickets } from "../redux/slices/ticketSlice";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const SupportHistory = ({ token }) => {
-  const [tickets, setTickets] = useState([]);
+  const dispatch = useDispatch();
+  const { tickets, loading, error } = useSelector((state) => state.tickets);
+
   const [users, setUsers] = useState([]);
   const [agents, setAgents] = useState([]);
 
@@ -13,31 +15,25 @@ const SupportHistory = ({ token }) => {
   const [filterAgent, setFilterAgent] = useState("");
   const [filterDate, setFilterDate] = useState("");
 
+  // Fetch tickets from Redux
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/tickets`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTickets(res.data);
-      } catch (err) {
-        console.error("Error fetching support history:", err);
-      }
-    };
+    dispatch(fetchTickets());
+  }, [dispatch]);
 
+  // Fetch users and agents locally
+  useEffect(() => {
     const fetchUsersAndAgents = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/users`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(res.data);
-        setAgents(res.data.filter((u) => u.role === "agent"));
+        }).then((res) => res.json());
+
+        setUsers(res);
+        setAgents(res.filter((u) => u.role === "agent"));
       } catch (err) {
         console.error("Error fetching users/agents:", err);
       }
     };
-
-    fetchTickets();
     fetchUsersAndAgents();
   }, [token]);
 
@@ -68,23 +64,25 @@ const SupportHistory = ({ token }) => {
     }
   };
 
-  // Apply filters and sort by updatedAt (latest updated first)
-  const filteredTickets = tickets
-    .filter((t) => {
-      const matchUser = filterUser ? t.user?._id === filterUser : true;
-      const matchAgent = filterAgent ? t.assignedAgent?._id === filterAgent : true;
-      const matchDate = filterDate
-        ? new Date(t.updatedAt).toISOString().split("T")[0] === filterDate
-        : true;
-      return matchUser && matchAgent && matchDate;
-    })
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  // Apply filters and sort
+  const filteredTickets = useMemo(() => {
+    return tickets
+      .filter((t) => {
+        const matchUser = filterUser ? t.user?._id === filterUser : true;
+        const matchAgent = filterAgent ? t.assignedAgent?._id === filterAgent : true;
+        const matchDate = filterDate
+          ? new Date(t.updatedAt).toISOString().split("T")[0] === filterDate
+          : true;
+        return matchUser && matchAgent && matchDate;
+      })
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  }, [tickets, filterUser, filterAgent, filterDate]);
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Support History</h2>
 
-      {/* Filter section */}
+      {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
         <div>
           <label className="block text-sm font-medium">Filter by User</label>
@@ -129,7 +127,10 @@ const SupportHistory = ({ token }) => {
         </div>
       </div>
 
-      {/* Tickets or No tickets message */}
+      {/* Tickets or Loading/Error */}
+      {loading && <div className="text-gray-500 text-center py-4">Loading tickets...</div>}
+      {error && <div className="text-red-500 text-center py-4">{error}</div>}
+
       <div className="space-y-6">
         {filteredTickets.length > 0 ? (
           filteredTickets.map((t) => (
@@ -137,24 +138,21 @@ const SupportHistory = ({ token }) => {
               key={t._id}
               className="grid grid-cols-3 items-center gap-6 bg-gray-100 text-gray-700 p-6 rounded-2xl shadow-lg hover:shadow-xl transition"
             >
-              {/* Left section: Issue + User */}
+              {/* Left */}
               <div className="flex flex-col gap-2 text-sm">
                 <p className="text-lg font-semibold text-black">{t.title}</p>
                 <p>
-                  <span className="font-semibold text-black">User:</span>{" "}
-                  {t.user?.name || "—"}
+                  <span className="font-semibold text-black">User:</span> {t.user?.name || "—"}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Raised By:</span>{" "}
-                  {t.raisedBy?.name || "—"}
+                  <span className="font-semibold text-black">Raised By:</span> {t.raisedBy?.name || "—"}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Agent:</span>{" "}
-                  {t.assignedAgent?.name || "Unassigned"}
+                  <span className="font-semibold text-black">Agent:</span> {t.assignedAgent?.name || "Unassigned"}
                 </p>
               </div>
 
-              {/* Center section: Priority + Status */}
+              {/* Center */}
               <div className="flex flex-col items-center gap-4">
                 <span
                   className={`px-4 py-1 rounded-md text-xs font-semibold uppercase tracking-wide ${getPriorityColor(
@@ -173,20 +171,17 @@ const SupportHistory = ({ token }) => {
                 </span>
               </div>
 
-              {/* Right section: Status Changed By + Times */}
+              {/* Right */}
               <div className="flex flex-col items-end gap-2 text-sm">
                 <p>
-                  <span className="font-semibold text-black">Status Changed By:</span>{" "}
-                  {t.statusChangedBy?.name || "—"}
+                  <span className="font-semibold text-black">Status Changed By:</span> {t.statusChangedBy?.name || "—"}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Opened:</span>{" "}
-                  {new Date(t.createdAt).toLocaleString()}
+                  <span className="font-semibold text-black">Opened:</span> {new Date(t.createdAt).toLocaleString()}
                 </p>
                 <p>
                   <span className="font-semibold text-black">Closed:</span>{" "}
-                  {t.status?.toLowerCase() === "done" ||
-                  t.status?.toLowerCase() === "closed"
+                  {t.status?.toLowerCase() === "done" || t.status?.toLowerCase() === "closed"
                     ? new Date(t.updatedAt).toLocaleString()
                     : "—"}
                 </p>
@@ -194,9 +189,11 @@ const SupportHistory = ({ token }) => {
             </div>
           ))
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center text-gray-500 text-lg">
-            No tickets found for the selected filters.
-          </div>
+          !loading && (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center text-gray-500 text-lg">
+              No tickets found for the selected filters.
+            </div>
+          )
         )}
       </div>
     </div>

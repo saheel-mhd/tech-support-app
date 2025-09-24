@@ -1,66 +1,28 @@
 // ./components/Notifications.jsx
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { formatDistanceToNow, format } from "date-fns";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchNotifications } from "../redux/slices/notificationsSlice";
+import { fetchAgentNotifications, markAllAsReadLocal } from "../redux/slices/agentNotificationsSlice";
+import { fetchUserNotifications } from "../redux/slices/userNotificationsSlice";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const AdminDashboardNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/tickets`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
 
-      const latest = res.data
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 6)
-        .map((ticket) => {
-          let message = "";
-
-          const raisedByName = ticket.raisedBy?.name || `User ID: ${ticket.raisedBy?._id || ticket.raisedBy}`;
-          const userName = ticket.user?.name || `User ID: ${ticket.user?._id || ticket.user}`;
-          const assignedAgentName = ticket.assignedAgent?.name || `Agent ID: ${ticket.assignedAgent?._id || ticket.assignedAgent}`;
-          const statusChangedByName = ticket.statusChangedBy?.name || `User ID: ${ticket.statusChangedBy?._id || ticket.statusChangedBy}`;
-
-          // New ticket
-          if (ticket.createdAt === ticket.updatedAt) {
-            message = `Ticket created by ${raisedByName}, for user ${userName}, status is ${ticket.status}`;
-          }
-          // Closed ticket
-          else if (ticket.status === "Closed") {
-            message = `Completed by ${statusChangedByName}`;
-          }
-          // Status changed
-          else if (ticket.statusChangedBy && ticket.status !== "Closed") {
-            message = `Status changed to ${ticket.status} by ${statusChangedByName}`;
-          }
-          // Agent changed (if assignedAgent updated)
-          else if (ticket.assignedAgent) {
-            message = `Assigned agent changed to ${assignedAgentName}`;
-          }
-
-          return {
-            ...ticket,
-            message,
-            timeAgo: formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true }),
-          };
-        });
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
-    }
-  };
+const AdminDashboardNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector(
+    (state) => state.notifications
+  );
+  const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [token]);
+    if (token) dispatch(fetchNotifications());
+  }, [dispatch, token]);
 
   return (
     <div className="bg-white shadow rounded p-4 mt-6 w-full ">
       <h2 className="font-bold mb-3">Recent Notifications</h2>
+      {status === "loading" && <p>Loading...</p>}
+      {status === "failed" && <p className="text-red-500">{error}</p>}
       {notifications.map((n) => (
         <div key={n._id} className="border-b py-2">
           <p className="text-sm font-semibold">{n.title}</p>
@@ -70,7 +32,9 @@ const AdminDashboardNotifications = ({ token }) => {
           </div>
         </div>
       ))}
-      {notifications.length === 0 && <p className="text-gray-500">No recent activity</p>}
+      {notifications.length === 0 && status !== "loading" && (
+        <p className="text-gray-500">No recent activity</p>
+      )}
     </div>
   );
 };
@@ -80,54 +44,22 @@ export default AdminDashboardNotifications;
 
 
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 // --- Admin Notifications function ---
-const AdminNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/tickets`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const latest = res.data
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-        .map((t) => ({
-          _id: t._id,
-          title: t.title,
-          message: getAdminMessage(t),
-          timeAgo: formatDistanceToNow(new Date(t.updatedAt), { addSuffix: true }),
-          updatedAt: format(new Date(t.updatedAt), "PPPp"),
-          read: t.read || false, // assuming ticket has 'read' field
-        }));
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      // Call your API to mark notifications as read
-      await axios.patch(
-        `${API_BASE_URL}/tickets/markAllRead`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update local state
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const AdminNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector((state) => state.notifications);
+  const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [token]);
+    if (token) dispatch(fetchNotifications());
+  }, [dispatch, token]);
+
+  const markAllAsRead = () => {
+    dispatch(markAllAsReadLocal());
+    // optionally call API to persist read status
+  };
 
   return (
     <div className="p-6">
@@ -142,16 +74,16 @@ const AdminNotifications = ({ token }) => {
       </div>
 
       <div className="space-y-4">
+        {status === "loading" && <p>Loading...</p>}
+        {status === "failed" && <p className="text-red-500">{error}</p>}
+
         {notifications.length > 0 ? (
           notifications.map((n) => (
             <div
               key={n._id}
               className="bg-white shadow-md rounded-lg p-4 flex justify-between items-start hover:shadow-lg transition duration-300 relative"
             >
-              {/* Blue dot for unread */}
-              {!n.read && (
-                <span className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full"></span>
-              )}
+              {!n.read && <span className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full"></span>}
 
               <div className="ml-4">
                 <p className="font-semibold text-gray-800">{n.title}</p>
@@ -170,6 +102,9 @@ const AdminNotifications = ({ token }) => {
   );
 };
 
+export { AdminNotifications };
+
+
 // --- Function to generate notification message ---
 const getAdminMessage = (ticket) => {
   if (ticket.assignedAgent) {
@@ -184,58 +119,69 @@ const getAdminMessage = (ticket) => {
   return `Status changed to ${ticket.status} by ${ticket.statusChangedBy?.name || "Unknown"}`;
 };
 
-export {AdminNotifications};
+export {getAdminMessage};
+
+
+
+// ------ user notification ------
+const UserDashboardNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector(
+    (state) => state.userNotifications
+  );
+
+  const token = useSelector((state) => state.auth.token);
+
+  useEffect(() => {
+    if (token) dispatch(fetchUserNotifications());
+  }, [dispatch, token]);
+
+  return (
+    <div className="bg-white shadow rounded p-4 mt-6 w-full ">
+      <h2 className="font-bold mb-3">Recent Notifications</h2>
+      {status === "loading" && <p>Loading...</p>}
+      {status === "failed" && <p className="text-red-500">{error}</p>}
+      {notifications.map((n) => (
+        <div key={n._id} className="border-b py-2">
+          <p className="text-sm font-semibold">{n.title}</p>
+          <div className="flex justify-between items-start">
+            <p className="text-sm text-gray-700">{n.message}</p>
+            <span className="text-xs text-gray-400 ml-2">{n.timeAgo}</span>
+          </div>
+        </div>
+      ))}
+      {notifications.length === 0 && status !== "loading" && (
+        <p className="text-gray-500">No recent activity</p>
+      )}
+    </div>
+  );
+};
+
+export { UserDashboardNotifications };
+
+
+
+
+
+
 
 
 
 // --- User Notifications function ---
-const UserNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const latest = res.data
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-        .map((t) => ({
-          _id: t._id,
-          title: t.title,
-          message: getUserMessage(t),
-          timeAgo: formatDistanceToNow(new Date(t.updatedAt), {
-            addSuffix: true,
-          }),
-          updatedAt: format(new Date(t.updatedAt), "PPPp"),
-          read: t.read || false,
-        }));
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      await axios.patch(
-        "http://localhost:5000/api/tickets/markAllRead",
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const UserNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector(
+    (state) => state.userNotifications
+  );
 
   useEffect(() => {
-    fetchNotifications();
-  }, [token]);
+    dispatch(fetchUserNotifications());
+  }, [dispatch]);
+
+  const markAllAsRead = () => {
+    dispatch(markAllAsReadLocal());
+    // optionally call backend API here if needed
+  };
 
   return (
     <div className="p-6">
@@ -249,6 +195,9 @@ const UserNotifications = ({ token }) => {
         </button>
       </div>
 
+      {status === "loading" && <p>Loading...</p>}
+      {status === "failed" && <p className="text-red-500">{error}</p>}
+
       <div className="space-y-4">
         {notifications.length > 0 ? (
           notifications.map((n) => (
@@ -259,18 +208,12 @@ const UserNotifications = ({ token }) => {
               {!n.read && (
                 <span className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full"></span>
               )}
-
               <div className="ml-4">
                 <p className="font-semibold text-gray-800">{n.title}</p>
                 <p className="text-sm text-gray-600 mt-1">{n.message}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Updated at: {n.updatedAt}
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Updated at: {n.updatedAt}</p>
               </div>
-
-              <span className="text-xs mt-6 text-gray-400 ml-4">
-                {n.timeAgo}
-              </span>
+              <span className="text-xs mt-6 text-gray-400 ml-4">{n.timeAgo}</span>
             </div>
           ))
         ) : (
@@ -280,7 +223,6 @@ const UserNotifications = ({ token }) => {
     </div>
   );
 };
-
 const getUserMessage = (ticket) => {
   if (ticket.status === "Closed") {
     return `Your ticket was closed by ${ticket.statusChangedBy?.name || "Unknown"}`;
@@ -293,137 +235,24 @@ const getUserMessage = (ticket) => {
   }
   return `Ticket status changed to ${ticket.status}`;
 };
-
 export  { UserNotifications };
 
 
-
-
-
-// -- user Dashboard Notification ---
-const UserDashboardNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const latest = res.data
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 6)
-        .map((ticket) => {
-          let message = "";
-
-          const raisedByName = ticket.raisedBy?.name || `User ID: ${ticket.raisedBy?._id || ticket.raisedBy}`;
-          const userName = ticket.user?.name || `User ID: ${ticket.user?._id || ticket.user}`;
-          const assignedAgentName = ticket.assignedAgent?.name || `Agent ID: ${ticket.assignedAgent?._id || ticket.assignedAgent}`;
-          const statusChangedByName = ticket.statusChangedBy?.name || `User ID: ${ticket.statusChangedBy?._id || ticket.statusChangedBy}`;
-
-          // New ticket
-          if (ticket.createdAt === ticket.updatedAt) {
-            message = `Ticket created by ${raisedByName}, for user ${userName}, status is ${ticket.status}`;
-          }
-          // Closed ticket
-          else if (ticket.status === "Closed") {
-            message = `Completed by ${statusChangedByName}`;
-          }
-          // Status changed
-          else if (ticket.statusChangedBy && ticket.status !== "Closed") {
-            message = `Status changed to ${ticket.status} by ${statusChangedByName}`;
-          }
-          // Agent changed (if assignedAgent updated)
-          else if (ticket.assignedAgent) {
-            message = `Assigned agent changed to ${assignedAgentName}`;
-          }
-
-          return {
-            ...ticket,
-            message,
-            timeAgo: formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true }),
-          };
-        });
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [token]);
-
-  return (
-    <div className="bg-white shadow rounded p-4 mt-6 w-full ">
-      <h2 className="font-bold mb-3">Recent Notifications</h2>
-      {notifications.map((n) => (
-        <div key={n._id} className="border-b py-2">
-          <p className="text-sm font-semibold">{n.title}</p>
-          <div className="flex justify-between items-start">
-            <p className="text-sm text-gray-700">{n.message}</p>
-            <span className="text-xs text-gray-400 ml-2">{n.timeAgo}</span>
-          </div>
-        </div>
-      ))}
-      {notifications.length === 0 && <p className="text-gray-500">No recent activity</p>}
-    </div>
-  );
-};
-
-export  { UserDashboardNotifications };
-
-
-
 // --- agent Notifications function ---
-const AgentNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const latest = res.data
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-        .map((t) => ({
-          _id: t._id,
-          title: t.title,
-          message: getAgentMessage(t),
-          timeAgo: formatDistanceToNow(new Date(t.updatedAt), {
-            addSuffix: true,
-          }),
-          updatedAt: format(new Date(t.updatedAt), "PPPp"),
-          read: t.read || false,
-        }));
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      await axios.patch(
-        "http://localhost:5000/api/tickets/markAllRead",
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const AgentNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector(
+    (state) => state.agentNotifications
+  );
 
   useEffect(() => {
-    fetchNotifications();
-  }, [token]);
+    dispatch(fetchAgentNotifications());
+  }, [dispatch]);
+
+  const markAllAsRead = () => {
+    dispatch(markAllAsReadLocal());
+    // optionally call backend API if needed
+  };
 
   return (
     <div className="p-6">
@@ -437,6 +266,9 @@ const AgentNotifications = ({ token }) => {
         </button>
       </div>
 
+      {status === "loading" && <p>Loading...</p>}
+      {status === "failed" && <p className="text-red-500">{error}</p>}
+
       <div className="space-y-4">
         {notifications.length > 0 ? (
           notifications.map((n) => (
@@ -447,18 +279,12 @@ const AgentNotifications = ({ token }) => {
               {!n.read && (
                 <span className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full"></span>
               )}
-
               <div className="ml-4">
                 <p className="font-semibold text-gray-800">{n.title}</p>
                 <p className="text-sm text-gray-600 mt-1">{n.message}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Updated at: {n.updatedAt}
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Updated at: {n.updatedAt}</p>
               </div>
-
-              <span className="text-xs mt-6 text-gray-400 ml-4">
-                {n.timeAgo}
-              </span>
+              <span className="text-xs mt-6 text-gray-400 ml-4">{n.timeAgo}</span>
             </div>
           ))
         ) : (
@@ -489,75 +315,53 @@ export  { AgentNotifications };
 
 
 // -- user Dashboard Notification ---
-const AgentDashboardNotifications = ({ token }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tickets", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const latest = res.data
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 6)
-        .map((ticket) => {
-          let message = "";
-
-          const raisedByName = ticket.raisedBy?.name || `User ID: ${ticket.raisedBy?._id || ticket.raisedBy}`;
-          const userName = ticket.user?.name || `User ID: ${ticket.user?._id || ticket.user}`;
-          const assignedAgentName = ticket.assignedAgent?.name || `Agent ID: ${ticket.assignedAgent?._id || ticket.assignedAgent}`;
-          const statusChangedByName = ticket.statusChangedBy?.name || `User ID: ${ticket.statusChangedBy?._id || ticket.statusChangedBy}`;
-
-          // New ticket
-          if (ticket.createdAt === ticket.updatedAt) {
-            message = `Ticket created by ${raisedByName}, for user ${userName}, status is ${ticket.status}`;
-          }
-          // Closed ticket
-          else if (ticket.status === "Closed") {
-            message = `Completed by ${statusChangedByName}`;
-          }
-          // Status changed
-          else if (ticket.statusChangedBy && ticket.status !== "Closed") {
-            message = `Status changed to ${ticket.status} by ${statusChangedByName}`;
-          }
-          // Agent changed (if assignedAgent updated)
-          else if (ticket.assignedAgent) {
-            message = `Assigned agent changed to ${assignedAgentName}`;
-          }
-
-          return {
-            ...ticket,
-            message,
-            timeAgo: formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true }),
-          };
-        });
-
-      setNotifications(latest);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
-    }
-  };
+const AgentDashboardNotifications = () => {
+  const dispatch = useDispatch();
+  const { items: notifications, status, error } = useSelector(
+    (state) => state.agentNotifications
+  );
 
   useEffect(() => {
-    fetchNotifications();
-  }, [token]);
+    dispatch(fetchAgentNotifications());
+  }, [dispatch]);
+
+  const handleMarkAllAsRead = () => {
+    dispatch(markAllAsReadLocal());
+  };
 
   return (
-    <div className="bg-white shadow rounded p-4 mt-6 w-full ">
-      <h2 className="font-bold mb-3">Recent Notifications</h2>
-      {notifications.map((n) => (
-        <div key={n._id} className="border-b py-2">
-          <p className="text-sm font-semibold">{n.title}</p>
-          <div className="flex justify-between items-start">
-            <p className="text-sm text-gray-700">{n.message}</p>
-            <span className="text-xs text-gray-400 ml-2">{n.timeAgo}</span>
-          </div>
-        </div>
-      ))}
-      {notifications.length === 0 && <p className="text-gray-500">No recent activity</p>}
+    <div className="bg-white shadow rounded p-4 mt-6 w-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="font-bold">Recent Notifications</h2>
+        <button
+          onClick={handleMarkAllAsRead}
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+        >
+          Mark all as read
+        </button>
+      </div>
+
+      {status === "loading" && <p>Loading notifications...</p>}
+      {status === "failed" && <p className="text-red-500">{error}</p>}
+
+      <div className="space-y-4">
+        {notifications.length > 0 ? (
+          notifications.map((n) => (
+            <div key={n._id} className="border-b py-2 flex justify-between">
+              <div>
+                <p className="text-sm font-semibold">{n.title}</p>
+                <p className="text-sm text-gray-700">{n.message}</p>
+                <p className="text-xs text-gray-400 mt-1">Updated at: {n.updatedAt}</p>
+              </div>
+              <span className="text-xs text-gray-400 ml-2">{n.timeAgo}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500">No recent activity</p>
+        )}
+      </div>
     </div>
   );
 };
 
-export  { AgentDashboardNotifications };
+export { AgentDashboardNotifications };

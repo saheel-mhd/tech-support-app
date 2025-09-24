@@ -10,24 +10,45 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
 import Users from "../components/Users";
 import ActiveSupport from "../components/ActiveSupport";
 import SupportHistory from "../components/SupportHistory";
 import NewTicket from "../components/NewTicket";
 import DashboardCounters from "../components/DashboardCounters";
-import AdminDashboardNotifications, { AdminNotifications } from "../components/Notifications";
+import { AdminNotifications } from "../components/Notifications";
+import  AdminDashboardNotifications from "../components/Notifications"
+
+import { logout } from "../redux/slices/authSlice";
+import { fetchUsers } from "../redux/slices/userSlice";
+import { fetchTickets } from "../redux/slices/ticketSlice";
 
 const AdminDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeView, setActiveView] = useState("dashboard");
   const [showNewTicket, setShowNewTicket] = useState(false);
+
   const sidebarRef = useRef(null);
   const modalRef = useRef(null);
-  const token = localStorage.getItem("token");
+
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const { user } = useSelector((state) => state.auth);
+
+  // Fetch users & tickets on mount
+  useEffect(() => {
+    if (user?.token) {
+      dispatch(fetchUsers());
+      dispatch(fetchTickets());
+    } else {
+      navigate("/login");
+    }
+  }, [dispatch, user, navigate]);
+
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -151,18 +172,18 @@ const AdminDashboard = () => {
           {activeView === "dashboard" && (
             <div className="flex flex-col gap-6">
               <div className="w-full">
-                <DashboardCounters token={token} />
+                <DashboardCounters />
               </div>
               <div className="w-full md:w-1/2">
-                <AdminDashboardNotifications token={token} />
+                <AdminDashboardNotifications />
               </div>
             </div>
           )}
 
-          {activeView === "users" && <Users token={token} />}
-          {activeView === "active" && <ActiveSupport token={token} />}
-          {activeView === "history" && <SupportHistory token={token} />}
-          {activeView === "notification" && <AdminNotifications token={token} />}
+          {activeView === "users" && <Users />}
+          {activeView === "active" && <ActiveSupport />}
+          {activeView === "history" && <SupportHistory />}
+          {activeView === "notification" && <AdminNotifications />}
         </div>
 
         {/* New Ticket Modal */}
@@ -170,7 +191,7 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="absolute inset-0 bg-black opacity-40"></div>
             <div ref={modalRef} className="p-6 rounded z-10 w-[550px]">
-              <NewTicket token={token} onClose={() => setShowNewTicket(false)} />
+              <NewTicket onClose={() => setShowNewTicket(false)} />
             </div>
           </div>
         )}

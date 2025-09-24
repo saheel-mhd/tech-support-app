@@ -1,33 +1,25 @@
 // src/components/ActiveSupport.jsx
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { format } from "date-fns";
-
+import { fetchTickets, updateTicketStatus } from "../redux/slices/ticketSlice";
+import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const ActiveSupport = ({ token, role }) => {
-  const [tickets, setTickets] = useState([]);
+
+const ActiveSupport = ({ role, token }) => {
+  const dispatch = useDispatch();
+  const { tickets, loading, error } = useSelector((state) => state.tickets);
+
   const [agents, setAgents] = useState([]);
 
-
+  // Fetch tickets from Redux
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/tickets`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    dispatch(fetchTickets());
+  }, [dispatch]);
 
-        // Filter & sort here
-        const filtered = res.data
-          .filter((t) => t.status === "Open" || t.status === "In Progress")
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        setTickets(filtered);
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-      }
-    };
-
+  // Fetch agents locally
+  useEffect(() => {
     const fetchAgents = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/users`, {
@@ -38,32 +30,20 @@ const ActiveSupport = ({ token, role }) => {
         console.error("Error fetching agents:", err);
       }
     };
-
-    fetchTickets();
     fetchAgents();
   }, [token]);
 
-  const updateTicket = async (id, newStatus, newAgent) => {
-    try {
-      const res = await axios.put(
-        `${API_BASE_URL}/tickets/${id}`,
-        { 
-          status: newStatus, 
-          assignedAgent: newAgent || null
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setTickets((prev) =>
-        prev
-          .map((t) => (t._id === id ? res.data : t))
-          .filter((t) => t.status === "Open" || t.status === "In Progress")
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      );
-    } catch (err) {
-      console.error("Error updating ticket:", err.response?.data || err);
-    }
+  // Update ticket via Redux
+  const handleUpdateTicket = (id, status, assignedAgent) => {
+    dispatch(updateTicketStatus({ id, status, assignedAgent }));
   };
+
+  // Filter and sort active tickets
+  const activeTickets = useMemo(() => {
+    return tickets
+      .filter((t) => t.status === "Open" || t.status === "In Progress")
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [tickets]);
 
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
@@ -80,18 +60,28 @@ const ActiveSupport = ({ token, role }) => {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6">Active Support Tickets</h2>
+
+      {loading && (
+        <div className="text-gray-500 text-center py-4">Loading tickets...</div>
+      )}
+
+      {error && (
+        <div className="text-red-500 text-center py-4">{error}</div>
+      )}
+
       <div className="space-y-4">
-        {tickets.length === 0 && (
+        {activeTickets.length === 0 && !loading && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-gray-500">
             No active tickets found.
           </div>
         )}
-        {tickets.map((t) => (
+
+        {activeTickets.map((t) => (
           <div
             key={t._id}
             className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row md:items-center justify-between"
           >
-            {/* Left section: Issue & Details */}
+            {/* Left section */}
             <div className="flex-1 mb-3 md:mb-0">
               <p className="text-lg font-semibold">{t.title}</p>
               <p className="text-sm text-gray-600">
@@ -112,7 +102,7 @@ const ActiveSupport = ({ token, role }) => {
               </p>
             </div>
 
-            {/* Right section: Actions */}
+            {/* Right section */}
             <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
               {/* Status Dropdown */}
               <div className="mb-2 md:mb-0">
@@ -120,7 +110,7 @@ const ActiveSupport = ({ token, role }) => {
                 <select
                   className="border rounded px-2 py-1"
                   value={t.status}
-                  onChange={(e) => updateTicket(t._id, e.target.value, t.assignedAgent)}
+                  onChange={(e) => handleUpdateTicket(t._id, e.target.value, t.assignedAgent?._id)}
                 >
                   <option value="Open">Open</option>
                   {role !== "user" && <option value="In Progress">In Progress</option>}
@@ -137,7 +127,7 @@ const ActiveSupport = ({ token, role }) => {
                   <select
                     className="border rounded px-2 py-1"
                     value={t.assignedAgent?._id || ""}
-                    onChange={(e) => updateTicket(t._id, t.status, e.target.value)}
+                    onChange={(e) => handleUpdateTicket(t._id, t.status, e.target.value)}
                   >
                     <option value="">Unassigned</option>
                     {agents.map((a) => (
