@@ -8,6 +8,7 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaBell,
+  FaUser,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,6 +21,7 @@ import { AgentNewTicket } from "../components/NewTicket";
 import { AgentDashboardNotifications, AgentNotifications } from "../components/Notifications";
 import { setCurrentTicket, clearTickets } from "../redux/slices/ticketSlice";
 import { logout } from "../redux/slices/authSlice";
+import Profile from "../components/profile"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -32,7 +34,7 @@ const AgentDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  const { token, role } = useSelector((state) => state.auth);
+  const { token, role, user } = useSelector((state) => state.auth);
   const tickets = useSelector((state) => state.tickets.items);
   const loading = useSelector((state) => state.tickets.loading);
 
@@ -112,6 +114,9 @@ useEffect(() => {
             <li className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition" onClick={() => setActiveView("notification")}>
               <FaBell /> Notifications
             </li>
+            <li className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer transition" onClick={() => setActiveView("profile")}>
+              <FaUser />Profile
+            </li>
           </ul>
         </div>
 
@@ -158,6 +163,7 @@ useEffect(() => {
           {activeView === "active" && <ActiveSupport token={token} role={role} />}
           {activeView === "history" && <SupportHistory token={token} />}
           {activeView === "notification" && <AgentNotifications token={token} />}
+          {activeView === "profile" && <Profile token={token} userId={user._id} /> }
         </div>
       </div>
     </div>

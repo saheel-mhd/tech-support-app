@@ -60,6 +60,7 @@ export const deleteUser = async (req, res) => {
 
 
 // Update a user
+// Update a user (store password same as createUser)
 export const updateUser = async (req, res) => {
   try {
     const { name, email, role, password } = req.body;
@@ -73,9 +74,7 @@ export const updateUser = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (role) user.role = role;
-    if (password) {
-      user.password = await bcrypt.hash(password, 10);
-    }
+    if (password) user.password = password; // store exactly like createUser
 
     const updatedUser = await user.save();
 
@@ -87,6 +86,18 @@ export const updateUser = async (req, res) => {
     });
   } catch (err) {
     console.error("Update user error:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// for a single user
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("Get user by ID error:", err.message);
     res.status(500).json({ message: err.message });
   }
 };

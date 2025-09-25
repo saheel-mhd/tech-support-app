@@ -8,6 +8,7 @@ import {
   FaPlus,
   FaBell,
   FaSignOutAlt,
+  FaUser,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,6 +24,7 @@ import  AdminDashboardNotifications from "../components/Notifications"
 import { logout } from "../redux/slices/authSlice";
 import { fetchUsers } from "../redux/slices/userSlice";
 import { fetchTickets } from "../redux/slices/ticketSlice";
+import Profile from "../components/profile";
 
 const AdminDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -134,6 +136,14 @@ const AdminDashboard = () => {
           >
             <FaBell /> Notifications
           </li>
+          <li className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 rounded cursor-pointer trasnsition"
+            onClick={() => {
+              setActiveView("profile");
+              setMenuOpen(false);
+            }}
+          >
+            <FaUser /> Profile
+          </li>
         </ul>
 
         {/* Logout button pinned to bottom */}
@@ -184,6 +194,7 @@ const AdminDashboard = () => {
           {activeView === "active" && <ActiveSupport />}
           {activeView === "history" && <SupportHistory />}
           {activeView === "notification" && <AdminNotifications />}
+          {activeView === "profile" && <Profile />}
         </div>
 
         {/* New Ticket Modal */}

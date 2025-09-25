@@ -6,6 +6,7 @@ import userReducer from "./slices/userSlice";
 import notificationsReducer from "./slices/notificationsSlice";
 import userNotificationsReducer from "./slices/userNotificationsSlice";
 import agentNotificationsReducer from "./slices/agentNotificationsSlice";
+import profileReducer from "./slices/profileSlice"
 
 const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ const store = configureStore({
     notifications: notificationsReducer,
     userNotifications: userNotificationsReducer,
     agentNotifications: agentNotificationsReducer,
+    profile: profileReducer,
   },
   devTools: true, // Enable Redux DevTools
 });

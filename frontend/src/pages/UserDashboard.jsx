@@ -7,6 +7,7 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaBell,
+  FaUser,
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import Users from "../components/Users";
 import { UserNotifications, UserDashboardNotifications } from "../components/Notifications";
 import { logout } from "../redux/slices/authSlice";
 import { setCurrentTicket, clearTickets } from "../redux/slices/ticketSlice";
+import Profile from "../components/profile";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const UserDashboard = () => {
@@ -28,7 +30,7 @@ const UserDashboard = () => {
 
   const dispatch = useDispatch();
 
-  const { token, role } = useSelector((state) => state.auth);
+  const { token, role, user } = useSelector((state) => state.auth);
   const tickets = useSelector((state) => state.tickets.items);
   const loading = useSelector((state) => state.tickets.loading);
 
@@ -119,6 +121,13 @@ const UserDashboard = () => {
             >
               <FaBell /> Notifications
             </li>
+            <li className="flex items-center gap-3 px-6 py-2 hover:bg-gray-800 cursor-pointer rounded transistion"
+              onClick={() => {
+                setActiveView("profile")
+              }}
+            >
+              <FaUser />Profile
+            </li>
           </ul>
         </div>
 
@@ -173,6 +182,7 @@ const UserDashboard = () => {
           {activeView === "active" && <ActiveSupport token={token} role={role}/>}
           {activeView === "history" && <SupportHistory token={token} />}
           {activeView === "notification" && <UserNotifications token={token} />}
+          {activeView === "profile" && <Profile token={token} userId={user._id}/>}
         </div>
       </div>
     </div>
