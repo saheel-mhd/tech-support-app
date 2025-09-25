@@ -20,7 +20,7 @@ const AdminDashboardNotifications = () => {
 
   return (
     <div className="bg-white shadow rounded p-4 mt-6 w-full ">
-      <h2 className="font-bold mb-3">Recent Notifications</h2>
+      <h2 className="text-3xl font-bold tracking-wide text-gradient bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-pink-500 to-purple-500">Recent Notifications</h2>
       {status === "loading" && <p>Loading...</p>}
       {status === "failed" && <p className="text-red-500">{error}</p>}
       {notifications.map((n) => (

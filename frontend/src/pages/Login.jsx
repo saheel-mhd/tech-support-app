@@ -32,7 +32,7 @@ const Login = () => {
         onSubmit={handleLogin}
         className="bg-white p-8 rounded shadow-md w-96"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+        <h2 className="mb-6 text-center text-3xl font-bold tracking-wide text-gradient bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-pink-500 to-purple-500">Login</h2>
 
         {loading && <p className="text-blue-600 mb-4">Logging in...</p>}
         {error && <p className="text-red-500 mb-4">{error}</p>}

@@ -10,44 +10,63 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { UserNewTicket } from "../components/NewTicket";
 import SupportHistory from "../components/SupportHistory";
 import ActiveSupport   from "../components/ActiveSupport"; 
 import Users from "../components/Users";
 import { UserNotifications, UserDashboardNotifications } from "../components/Notifications";
+import { logout } from "../redux/slices/authSlice";
+import { setCurrentTicket, clearTickets } from "../redux/slices/ticketSlice";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const UserDashboard = () => {
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState("dashboard");
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role")
   const navigate = useNavigate();
   const [showNewTicket, setShowNewTicket] = useState(false);
   const modalRef = useRef(null);
 
+  const dispatch = useDispatch();
+
+  const { token, role } = useSelector((state) => state.auth);
+  const tickets = useSelector((state) => state.tickets.items);
+  const loading = useSelector((state) => state.tickets.loading);
+
   // Fetch tickets for the dashboard
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/tickets`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTickets(res.data);
-        setLoading(false);
-      } catch (err) {
-        console.error("fetchData error:", err);
-        setLoading(false);
+  if (!token || activeView !== "dashboard") return;
+
+  let isMounted = true;
+
+  const fetchTickets = async () => {
+    dispatch(setCurrentTicket({ loading: true, items: [] }));
+    try {
+      const res = await axios.get(`${API_BASE_URL}/tickets`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (isMounted) dispatch(setCurrentTicket({ items: res.data, loading: false }));
+    } catch (err) {
+      console.error("fetchTickets error:", err);
+      if (err.response?.status === 401) {
+        // Token invalid, force logout
+        dispatch(logout());
+        dispatch(clearTickets());
+        navigate("/login", { replace: true });
+      } else {
+        if (isMounted) dispatch(setCurrentTicket({ items: [], loading: false }));
       }
-    };
-    if (activeView === "dashboard") fetchTickets();
-  }, [token, activeView]);
+    }
+  };
+
+  fetchTickets();
+
+  return () => { isMounted = false };
+}, [token, activeView, dispatch, navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/login");
+    dispatch(logout());
+    dispatch(clearTickets());
+    navigate("/login", { replace: true });
   };
 
   // Close modal when clicking outside

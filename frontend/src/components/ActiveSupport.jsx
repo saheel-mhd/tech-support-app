@@ -59,7 +59,7 @@ const ActiveSupport = ({ role, token }) => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Active Support Tickets</h2>
+      <h2 className="text-3xl font-bold tracking-wide text-gradient bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-pink-500 to-purple-500">Active Support Tickets</h2>
 
       {loading && (
         <div className="text-gray-500 text-center py-4">Loading tickets...</div>
