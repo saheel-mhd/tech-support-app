@@ -14,7 +14,7 @@ const API_URL = process.env.VITE_APP_BASE_URL;
 const app = express();
 
 app.use(cors({
-  origin: API_URL || "http://localhost:5173", // Vite frontend URL
+  origin:  API_URL, // Vite frontend URL
   credentials: true,
 }));
 
