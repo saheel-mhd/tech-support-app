@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "backend/\r ├─ node_modules/\r ├─ config/\r │   └─ db.js                  # MongoDB connection\r ├─ controllers/\r │   ├─ authController.js      # login, register\r │   ├─ ticketController.js    # CRUD for tickets\r │   └─ chatController.js      # chat messages\r ├─ middleware/\r │   ├─ authMiddleware.js      # verify JWT, protect routes\r │   └─ roleMiddleware.js      # role-based access control\r ├─ models/\r │   ├─ User.js                # User schema\r │   ├─ Ticket.js              # Ticket schema\r │   └─ Chat.js                # Chat schema\r ├─ routes/\r │   ├─ authRoutes.js          # login/register routes\r │   ├─ ticketRoutes.js        # ticket CRUD routes\r │   └─ chatRoutes.js          # chat routes\r ├─ utils/\r │   └─ generateToken.js       # JWT token generation\r ├─ .env                       # environment variables (DB URI, JWT secret)\r ├─ server.js                  # main server entry\r ├─ package.json\r └─ package-lock.json",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
